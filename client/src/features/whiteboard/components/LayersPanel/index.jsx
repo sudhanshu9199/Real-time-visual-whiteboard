@@ -4,7 +4,9 @@ import {
   Trash2, Type, Square, Circle, Minus, Pen,
   StickyNote, Triangle, Layers, Group,
 } from 'lucide-react';
-import { useWhiteboardStore } from '../../store/useWhiteboardStore';
+import { useSelector, useDispatch } from 'react-redux';
+import { setLayers, setSelectedObject } from '../../../../store/whiteboardSlice';
+import * as fabric from 'fabric';
  
 // ─── Type → icon map ─────────────────────────────────────────────────────────
 const TYPE_ICONS = {
@@ -92,7 +94,8 @@ const LayerRow = ({ layer, onSelect, onToggleVisible, onToggleLock, onDelete, on
  
 // ─── Main LayersPanel ─────────────────────────────────────────────────────────
 const LayersPanel = () => {
-  const { canvas, layers, setLayers, selectedObject, setSelectedObject } = useWhiteboardStore();
+  const { canvas, layers, selectedObject } = useSelector((state) => state.whiteboard);
+  const dispatch = useDispatch();
  
   const getCanvasObj = useCallback((layer) => {
     if (!canvas) return null;
@@ -112,7 +115,7 @@ const LayersPanel = () => {
       locked:  !!(obj.lockMovementX && obj.lockMovementY),
       object:  obj,
     }));
-    setLayers([...updated].reverse());
+    dispatch(setLayers([...updated].reverse()));
   }, [canvas, setLayers]);
  
   const handleSelect = (layer) => {
@@ -120,7 +123,7 @@ const LayersPanel = () => {
     if (!obj || !canvas) return;
     canvas.setActiveObject(obj);
     canvas.requestRenderAll();
-    setSelectedObject(obj);
+    dispatch(setSelectedObject(obj));
   };
  
   const handleToggleVisible = (layer) => {
@@ -223,7 +226,7 @@ const LayersPanel = () => {
             onClick={() => {
               if (!canvas) return;
               canvas.discardActiveObject();
-              const sel = new (require('fabric').fabric.ActiveSelection)(canvas.getObjects(), { canvas });
+              const sel = new fabric.ActiveSelection(canvas.getObjects(), { canvas });
               canvas.setActiveObject(sel);
               canvas.requestRenderAll();
             }}
@@ -237,7 +240,7 @@ const LayersPanel = () => {
               canvas.clear();
               canvas.backgroundColor = 'transparent';
               canvas.requestRenderAll();
-              setLayers([]);
+              dispatch(setLayers([]));
             }}
             className="flex-1 py-1.5 rounded-lg text-[10px] text-gray-600 hover:text-red-400 hover:bg-red-500/8 transition-colors font-medium"
           >

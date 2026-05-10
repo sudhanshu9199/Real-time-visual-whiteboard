@@ -4,7 +4,8 @@ import {
   ChevronUp, ChevronDown, Lock, Unlock, Trash2, RotateCcw,
   Bold, Italic,
 } from 'lucide-react';
-import { useWhiteboardStore } from '../../store/useWhiteboardStore';
+import { useSelector, useDispatch } from 'react-redux';
+import { setSelectedObject } from '../../../../store/whiteboardSlice';
  
 // ─── Color swatch palette ────────────────────────────────────────────────────
 const SWATCHES = [
@@ -105,7 +106,8 @@ const Section = ({ title, children }) => (
  
 // ─── Main PropertiesPanel ─────────────────────────────────────────────────────
 const PropertiesPanel = () => {
-  const { canvas, selectedObject, setSelectedObject } = useWhiteboardStore();
+  const { canvas, selectedObject } = useSelector((state) => state.whiteboard);
+  const dispatch = useDispatch();
   const [, forceRender] = useState(0);
  
   const refresh = useCallback(() => forceRender((n) => n + 1), []);
@@ -156,7 +158,7 @@ const PropertiesPanel = () => {
     if (!canvas || !obj) return;
     canvas.remove(obj);
     canvas.discardActiveObject();
-    setSelectedObject(null);
+    dispatch(setSelectedObject(null));
     canvas.requestRenderAll();
   };
  

@@ -5,7 +5,8 @@ import {
   ArrowRight, Diamond, Minus as LineIcon,
   Undo2, Redo2, Trash2,
 } from 'lucide-react';
-import { useWhiteboardStore } from '../../store/useWhiteboardStore';
+import { useSelector, useDispatch } from 'react-redux';
+import { setActiveTool, setActiveShape, setPenColor, setPenWidth, undo, redo } from '../../../../store/whiteboardSlice';
  
 // ─── Tool button ─────────────────────────────────────────────────────────────
 const ToolBtn = ({ icon: Icon, label, active, onClick, shortcut, danger }) => (
@@ -129,13 +130,12 @@ const PenSubmenu = ({ penColor, penWidth, onColorChange, onWidthChange, onClose 
 // ─── Main Toolbar ─────────────────────────────────────────────────────────────
 const Toolbar = () => {
   const {
-    activeTool, setActiveTool,
-    activeShape, setActiveShape,
-    penColor, setPenColor,
-    penWidth, setPenWidth,
-    canvas, undo, redo,
-    canUndo, canRedo,
-  } = useWhiteboardStore();
+    activeTool, activeShape, penColor, penWidth, canvas, history, historyIndex,
+  } = useSelector((state) => state.whiteboard);
+  const dispatch = useDispatch();
+
+  const canUndo = historyIndex > 0;
+  const canRedo = historyIndex < history.length - 1;
  
   const [showShapeMenu, setShowShapeMenu] = useState(false);
   const [showPenMenu,   setShowPenMenu]   = useState(false);
@@ -187,7 +187,7 @@ const Toolbar = () => {
           label="Select"
           shortcut="V"
           active={activeTool === 'select'}
-          onClick={() => setActiveTool('select')}
+          onClick={() => dispatch(setActiveTool('select'))}
         />
  
         <Divider />
@@ -200,7 +200,7 @@ const Toolbar = () => {
             shortcut="P"
             active={activeTool === 'pen'}
             onClick={() => {
-              setActiveTool('pen');
+              dispatch(setActiveTool('pen'));
               setShowPenMenu((p) => !p);
               setShowShapeMenu(false);
             }}
@@ -209,8 +209,8 @@ const Toolbar = () => {
             <PenSubmenu
               penColor={penColor}
               penWidth={penWidth}
-              onColorChange={setPenColor}
-              onWidthChange={setPenWidth}
+              onColorChange={(c) => dispatch(setPenColor(c))}
+              onWidthChange={(w) => dispatch(setPenWidth(w))}
               onClose={() => setShowPenMenu(false)}
             />
           )}
@@ -224,7 +224,7 @@ const Toolbar = () => {
             shortcut="S"
             active={activeTool === 'shape'}
             onClick={() => {
-              setActiveTool('shape');
+              dispatch(setActiveTool('shape'));
               setShowShapeMenu((p) => !p);
               setShowPenMenu(false);
             }}
@@ -232,7 +232,7 @@ const Toolbar = () => {
           {showShapeMenu && (
             <ShapeSubmenu
               activeShape={activeShape}
-              onSelect={setActiveShape}
+              onSelect={(s) => dispatch(setActiveShape(s))}
               onClose={() => setShowShapeMenu(false)}
             />
           )}
@@ -245,7 +245,7 @@ const Toolbar = () => {
           shortcut="T"
           active={activeTool === 'text'}
           onClick={() => {
-            setActiveTool('text');
+            dispatch(setActiveTool('text'));
             setShowShapeMenu(false);
             setShowPenMenu(false);
           }}
@@ -258,7 +258,7 @@ const Toolbar = () => {
           shortcut="N"
           active={activeTool === 'sticky'}
           onClick={() => {
-            setActiveTool('sticky');
+            dispatch(setActiveTool('sticky'));
             setShowShapeMenu(false);
             setShowPenMenu(false);
           }}
@@ -271,7 +271,7 @@ const Toolbar = () => {
           shortcut="E"
           active={activeTool === 'eraser'}
           onClick={() => {
-            setActiveTool('eraser');
+            dispatch(setActiveTool('eraser'));
             setShowShapeMenu(false);
             setShowPenMenu(false);
           }}
@@ -284,8 +284,8 @@ const Toolbar = () => {
           icon={Undo2}
           label="Undo"
           shortcut="Ctrl+Z"
-          active={false}
-          onClick={undo}
+          active={canUndo}
+          onClick={() => dispatch(undo())}
         />
  
         {/* ── Redo ── */}
@@ -293,8 +293,8 @@ const Toolbar = () => {
           icon={Redo2}
           label="Redo"
           shortcut="Ctrl+Shift+Z"
-          active={false}
-          onClick={redo}
+          active={canRedo}
+          onClick={() => dispatch(redo())}
         />
  
         <Divider />

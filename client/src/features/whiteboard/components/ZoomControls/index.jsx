@@ -1,19 +1,21 @@
 import React from 'react';
 import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
-import { fabric } from 'fabric';
-import { useWhiteboardStore } from '../../store/useWhiteboardStore';
+import * as fabric from 'fabric';
+import { useSelector, useDispatch } from 'react-redux';
+import { setZoom } from '../../../../store/whiteboardSlice';
  
 const ZOOM_LEVELS = [0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4];
  
 const ZoomControls = () => {
-  const { canvas, zoom, setZoom } = useWhiteboardStore();
+  const { canvas, zoom } = useSelector((state) => state.whiteboard);
+  const dispatch = useDispatch();
  
   const zoomToCenter = (newZoom) => {
     if (!canvas) return;
     const clamped = Math.min(Math.max(newZoom, 0.08), 12);
     const center  = new fabric.Point(canvas.getWidth() / 2, canvas.getHeight() / 2);
     canvas.zoomToPoint(center, clamped);
-    setZoom(clamped);
+    dispatch(setZoom(clamped));
   };
  
   const handleZoomIn = () => {
@@ -33,7 +35,7 @@ const ZoomControls = () => {
   const handleResetZoom = () => {
     if (!canvas) return;
     canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
-    setZoom(1);
+    dispatch(setZoom(1));
   };
  
   const handleFitToWindow = () => {
@@ -59,7 +61,7 @@ const ZoomControls = () => {
     const offsetX   = (canvas.getWidth()  - w * fitZoom) / 2 - (minX - padding) * fitZoom;
     const offsetY   = (canvas.getHeight() - h * fitZoom) / 2 - (minY - padding) * fitZoom;
     canvas.setViewportTransform([fitZoom, 0, 0, fitZoom, offsetX, offsetY]);
-    setZoom(fitZoom);
+    dispatch(setZoom(fitZoom));
   };
  
   const formatZoom = (z) => `${Math.round(z * 100)}%`;

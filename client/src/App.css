@@ -1,5 +1,18 @@
-*{
+body {
   margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+  overflow: hidden;
 }
+
+.app-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #0f0f14;
+  color: #e5e7eb;
+}
+
+.canvas-dot-grid {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 20px 20px;
+}/*# sourceMappingURL=App.css.map */

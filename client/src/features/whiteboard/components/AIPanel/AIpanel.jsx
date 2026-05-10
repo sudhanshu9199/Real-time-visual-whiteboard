@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Sparkles, Loader2, Bot, User, Wand2, ChevronRight } from 'lucide-react';
-import { useWhiteboardStore } from '../../store/useWhiteboardStore';
+import { useSelector } from 'react-redux';
  
 // ─── Prompt suggestions ───────────────────────────────────────────────────────
 const SUGGESTIONS = [
@@ -62,7 +62,7 @@ const buildCanvasContext = (canvas) => {
  
 // ─── Main AIPanel ─────────────────────────────────────────────────────────────
 const AIPanel = () => {
-  const { canvas } = useWhiteboardStore();
+  const { canvas } = useSelector((state) => state.whiteboard);
   const [messages,    setMessages]    = useState([
     {
       role: 'assistant',

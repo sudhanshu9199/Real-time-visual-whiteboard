@@ -4,8 +4,8 @@ import {
   Share2, Download, ChevronDown, Users, Check,
   FileImage, FileCode, Copy, Link,
 } from 'lucide-react';
-import { useWhiteboardStore } from '../../'
- 
+import { useSelector, useDispatch } from 'react-redux';
+import { setBoardName, setSidebarMode } from '../../../../store/whiteboardSlice';
 // ─── Avatar component ────────────────────────────────────────────────────────
 const Avatar = ({ user, size = 28, showTooltip = true }) => {
   const [tip, setTip] = useState(false);
@@ -39,7 +39,7 @@ const Avatar = ({ user, size = 28, showTooltip = true }) => {
  
 // ─── Export dropdown ─────────────────────────────────────────────────────────
 const ExportDropdown = ({ onClose }) => {
-  const { canvas, boardName } = useWhiteboardStore();
+  const { canvas, boardName } = useSelector((state) => state.whiteboard);
  
   const exportAs = (format) => {
     if (!canvas) return;
@@ -149,7 +149,8 @@ const ShareModal = ({ onClose }) => {
  
 // ─── Main TopNav ─────────────────────────────────────────────────────────────
 const TopNav = () => {
-  const { boardName, setBoardName, activeUsers, setSidebarMode } = useWhiteboardStore();
+  const { boardName, activeUsers } = useSelector((state) => state.whiteboard);
+  const dispatch = useDispatch();
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameValue,     setNameValue]     = useState(boardName);
   const [showExport,    setShowExport]    = useState(false);
@@ -173,7 +174,7 @@ const TopNav = () => {
  
   const commitName = () => {
     const trimmed = nameValue.trim() || 'Untitled Board';
-    setBoardName(trimmed);
+    dispatch(setBoardName(trimmed));
     setNameValue(trimmed);
     setIsEditingName(false);
   };
@@ -259,7 +260,7 @@ const TopNav = () => {
  
           {/* Layers button */}
           <button
-            onClick={() => setSidebarMode('layers')}
+            onClick={() => dispatch(setSidebarMode('layers'))}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/8 transition-colors text-xs font-medium"
             title="Layers"
           >
