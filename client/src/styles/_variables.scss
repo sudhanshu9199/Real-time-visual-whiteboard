@@ -1,0 +1,45 @@
+// 🎨 variables.scss
+:root {
+  // Deep Developer Dark Theme
+  --bg-void: #09090b;
+  --bg-surface: rgba(24, 24, 27, 0.6);
+  --bg-surface-hover: rgba(39, 39, 42, 0.8);
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-focus: rgba(255, 255, 255, 0.2);
+
+  --text-primary: #ededed;
+  --text-muted: #a1a1aa;
+
+  --accent-primary: #6366f1; // Indigo
+  --accent-glow: rgba(99, 102, 241, 0.4);
+
+  // Spacing & Radii
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-pill: 9999px;
+
+  --blur-md: blur(12px);
+  --blur-lg: blur(24px);
+}
+
+// Mixins for 2026 UI trends
+@mixin glass-panel {
+  background: var(--bg-surface);
+  backdrop-filter: var(--blur-lg);
+  -webkit-backdrop-filter: var(--blur-lg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
+}
+
+@mixin micro-hover {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  &:hover {
+    background: var(--bg-surface-hover);
+    transform: scale(1.05);
+  }
+  &:active {
+    transform: scale(0.95);
+  }
+}

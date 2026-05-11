@@ -15,7 +15,7 @@
   --blur-lg: blur(24px);
 }
 
-body {
+:global(body) {
   margin: 0;
   background-color: var(--bg-void);
   color: var(--text-primary);
@@ -29,7 +29,7 @@ body {
   height: 100vh;
 }
 
-.canvas-dot-grid {
+:global(.canvas-dot-grid) {
   background-image: radial-gradient(var(--border-subtle) 1px, transparent 1px);
   background-size: 24px 24px;
-}/*# sourceMappingURL=App.css.map */
+}/*# sourceMappingURL=App.module.css.map */

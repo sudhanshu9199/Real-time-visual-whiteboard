@@ -4,10 +4,11 @@ import Toolbar from "./features/whiteboard/components/Toolbar";
 import Sidebar from "./features/whiteboard/components/Sidebar";
 import TopNav from "./features/whiteboard/components/TopNav";
 import ZoomControls from "./features/whiteboard/components/ZoomControls";
+import style from "./App.module.scss";
 
 const App = () => {
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-[#0f0f14] text-gray-200">
+    <div className={style.appContainer}>
       {/* 1. The main drawing canvas (Base Layer) */}
       <Canvas />
 

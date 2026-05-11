@@ -1,0 +1,20 @@
+@use "./styles/variables";
+
+:global(body) {
+  margin: 0;
+  background-color: var(--bg-void);
+  color: var(--text-primary);
+  font-family: "Inter", system-ui, sans-serif;
+  overflow: hidden;
+}
+
+.appContainer {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+:global(.canvas-dot-grid) {
+  background-image: radial-gradient(var(--border-subtle) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
