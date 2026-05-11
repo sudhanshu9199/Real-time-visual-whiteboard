@@ -1,0 +1,120 @@
+@use "../../../../styles/variables" as *;
+
+.topnavWrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  // Let clicks pass through the transparent parts to the canvas!
+  pointer-events: none;
+}
+
+.navGroup {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+// 🧠 The floating AI Tools pill in the center
+.ai-tools-pill {
+  @include glass-panel;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--radius-pill);
+}
+
+.ai-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  // Soft glowing active state for AI features
+  &.active {
+    background: rgba(99, 102, 241, 0.15); // Indigo tint
+    color: #818cf8; // Light indigo text
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
+
+    svg {
+      color: #818cf8;
+      filter: drop-shadow(0 0 4px rgba(99, 102, 241, 0.8));
+    }
+  }
+}
+
+// 🎛️ Standard TopNav Inputs & Buttons
+.boardNameInput {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  outline: none;
+  transition: all 0.2s ease;
+
+  &:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+}
+
+.btn-ghost {
+  @include micro-hover;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-solid {
+  @include micro-hover;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-primary);
+  color: #ffffff;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 16px var(--accent-glow);
+}
+
+.divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border-subtle);
+}
