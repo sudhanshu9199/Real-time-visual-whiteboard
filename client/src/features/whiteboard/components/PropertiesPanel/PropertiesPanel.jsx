@@ -135,6 +135,7 @@ const PropertiesPanel = () => {
   const update = (props) => {
     if (!canvas || !obj) return;
     obj.set(props);
+    canvas.fire('object:modified', { target: obj });
     canvas.requestRenderAll();
   };
  

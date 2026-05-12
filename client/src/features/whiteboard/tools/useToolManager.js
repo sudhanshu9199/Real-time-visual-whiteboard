@@ -16,6 +16,7 @@ export const useToolManager = (canvas, syncLayers, saveHistory) => {
   const isDrawingRef = useRef(false);
   const shapeRef = useRef(null);
   const startPtRef = useRef({ x: 0, y: 0 });
+  const lastPtRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     if (!canvas) return;
@@ -55,7 +56,7 @@ export const useToolManager = (canvas, syncLayers, saveHistory) => {
       case "eraser":
         canvas.defaultCursor = "crosshair"; // Can use custom SVG cursor here
         mdHandler = (opt) => {
-          const target = canvas.findTarget(opt.e);
+          const target = opt.target || canvas.findTarget?.(opt.e);
           if (target) {
             canvas.remove(target);
             canvas.discardActiveObject();
@@ -67,21 +68,20 @@ export const useToolManager = (canvas, syncLayers, saveHistory) => {
 
       case "shape":
         canvas.defaultCursor = "crosshair";
-        const FILL = "rgba(99,102,241,0.12)";
-        const STROKE = "#6366f1";
 
         mdHandler = (opt) => {
           if (opt.e.altKey) return;
           isDrawingRef.current = true;
           const ptr = canvas.getScenePoint(opt.e);
           startPtRef.current = { x: ptr.x, y: ptr.y };
+          lastPtRef.current = { x: ptr.x, y: ptr.y };
 
           const baseConfig = {
             left: ptr.x,
             top: ptr.y,
-            fill: FILL,
-            stroke: STROKE,
-            strokeWidth: 2,
+            fill: "transparent",
+            stroke: penColor,
+            strokeWidth: penWidth,
             selectable: false,
             evented: false,
             id: uid("shape"),
@@ -94,13 +94,28 @@ export const useToolManager = (canvas, syncLayers, saveHistory) => {
               width: 0,
               height: 0,
             });
-          if (activeShape === "circle")
+          else if (activeShape === "circle")
             shapeRef.current = new fabric.Ellipse({
               ...baseConfig,
               rx: 0,
               ry: 0,
             });
-          // Add other shapes as needed...
+          else if (activeShape === "triangle")
+            shapeRef.current = new fabric.Triangle({
+              ...baseConfig,
+              width: 0,
+              height: 0,
+            });
+          else if (activeShape === "diamond")
+            shapeRef.current = new fabric.Polygon([
+              { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }
+            ], {
+              ...baseConfig,
+            });
+          else if (activeShape === "line" || activeShape === "arrow")
+            shapeRef.current = new fabric.Line([ptr.x, ptr.y, ptr.x, ptr.y], {
+              ...baseConfig,
+            });
 
           if (shapeRef.current) canvas.add(shapeRef.current);
         };
@@ -108,12 +123,13 @@ export const useToolManager = (canvas, syncLayers, saveHistory) => {
         mmHandler = (opt) => {
           if (!isDrawingRef.current || !shapeRef.current) return;
           const ptr = canvas.getScenePoint(opt.e);
+          lastPtRef.current = { x: ptr.x, y: ptr.y };
           const start = startPtRef.current;
 
           const w = Math.abs(ptr.x - start.x);
           const h = Math.abs(ptr.y - start.y);
 
-          if (activeShape === "rect") {
+          if (activeShape === "rect" || activeShape === "triangle") {
             shapeRef.current.set({
               width: w,
               height: h,
@@ -127,6 +143,21 @@ export const useToolManager = (canvas, syncLayers, saveHistory) => {
               left: Math.min(ptr.x, start.x),
               top: Math.min(ptr.y, start.y),
             });
+          } else if (activeShape === "diamond") {
+            shapeRef.current.set({
+              width: w,
+              height: h,
+              left: Math.min(ptr.x, start.x),
+              top: Math.min(ptr.y, start.y),
+              points: [
+                { x: w / 2, y: 0 },
+                { x: w, y: h / 2 },
+                { x: w / 2, y: h },
+                { x: 0, y: h / 2 },
+              ],
+            });
+          } else if (activeShape === "line" || activeShape === "arrow") {
+            shapeRef.current.set({ x2: ptr.x, y2: ptr.y });
           }
           canvas.requestRenderAll();
         };
@@ -134,10 +165,28 @@ export const useToolManager = (canvas, syncLayers, saveHistory) => {
         muHandler = () => {
           if (!isDrawingRef.current) return;
           isDrawingRef.current = false;
-          if (shapeRef.current) {
+          
+          if (activeShape === "arrow" && shapeRef.current) {
+            canvas.remove(shapeRef.current);
+            const arrow = createArrowGroup(
+              startPtRef.current.x, 
+              startPtRef.current.y, 
+              lastPtRef.current.x, 
+              lastPtRef.current.y, 
+              penColor, 
+              penWidth
+            );
+            arrow.set({ id: uid("arrow"), customName: "arrow", selectable: true, evented: true });
+            canvas.add(arrow);
+            shapeRef.current = arrow;
+          } else if (shapeRef.current) {
             shapeRef.current.set({ selectable: true, evented: true });
+          }
+          
+          if (shapeRef.current) {
             canvas.setActiveObject(shapeRef.current);
           }
+          
           shapeRef.current = null;
           syncLayers(canvas);
           saveHistory(canvas);
@@ -155,7 +204,7 @@ export const useToolManager = (canvas, syncLayers, saveHistory) => {
             top: ptr.y,
             fontFamily: '"DM Sans", sans-serif',
             fontSize: 20,
-            fill: "#1e1e2e",
+            fill: penColor,
             id: uid("text"),
             customName: "Text",
           });

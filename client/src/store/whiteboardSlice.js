@@ -102,28 +102,26 @@ export const {
 } = whiteboardSlice.actions;
 
 // 🔄 Thunks for Undo/Redo logic
-export const undo = () => (dispatch, getState) => {
+export const undo = () => async (dispatch, getState) => {
   const { canvas, history, historyIndex } = getState().whiteboard;
   if (!canvas || historyIndex <= 0) return;
   const newIndex = historyIndex - 1;
   dispatch(setIsReplaying(true));
-  canvas.loadFromJSON(history[newIndex], () => {
-    canvas.renderAll();
-    dispatch(setHistoryIndex(newIndex));
-    dispatch(setIsReplaying(false));
-  });
+  await canvas.loadFromJSON(history[newIndex]);
+  canvas.renderAll();
+  dispatch(setHistoryIndex(newIndex));
+  dispatch(setIsReplaying(false));
 };
 
-export const redo = () => (dispatch, getState) => {
+export const redo = () => async (dispatch, getState) => {
   const { canvas, history, historyIndex } = getState().whiteboard;
   if (!canvas || historyIndex >= history.length - 1) return;
   const newIndex = historyIndex + 1;
   dispatch(setIsReplaying(true));
-  canvas.loadFromJSON(history[newIndex], () => {
-    canvas.renderAll();
-    dispatch(setHistoryIndex(newIndex));
-    dispatch(setIsReplaying(false));
-  });
+  await canvas.loadFromJSON(history[newIndex]);
+  canvas.renderAll();
+  dispatch(setHistoryIndex(newIndex));
+  dispatch(setIsReplaying(false));
 };
 
 export default whiteboardSlice.reducer;
