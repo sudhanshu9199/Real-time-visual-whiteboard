@@ -15,9 +15,11 @@ import {
 } from "lucide-react";
 import DraggableToggle from "../DraggableToggle";
 import { useSelector, useDispatch } from "react-redux";
+import { socket } from "../../../../socket";
 import {
   setBoardName,
   setSidebarMode,
+  pushHistory,
 } from "../../../../store/whiteboardSlice";
 import style from "./TopNav.module.scss";
 // ─── Avatar component ────────────────────────────────────────────────────────
@@ -184,7 +186,7 @@ const ShareModal = ({ onClose }) => {
 
 // ─── Main TopNav ─────────────────────────────────────────────────────────────
 const TopNav = () => {
-  const { boardName, activeUsers } = useSelector((state) => state.whiteboard);
+  const { canvas, boardName, activeUsers } = useSelector((state) => state.whiteboard);
   const dispatch = useDispatch();
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(boardName);
@@ -197,13 +199,32 @@ const TopNav = () => {
   const exportBtnRef = useRef(null);
   
   const structureWhiteboard = () => {
+    if (!canvas) return;
     console.log("[AI Action]: Executing structure_whiteboard() algorithm...");
-    // Future AI cleanup logic can be tied in here!
+    const canvasState = canvas.toJSON(["id", "customName", "customType"]);
+    socket.emit('cleanup_request', { canvasState });
   };
 
   useEffect(() => {
     if (isEditingName) nameInputRef.current?.select();
   }, [isEditingName]);
+
+  // Handle incoming cleanup response
+  useEffect(() => {
+    const handleCleanupResponse = async (payload) => {
+      if (payload.success && canvas) {
+        console.log("[AI Action]: Applying cleaned state...");
+        await canvas.loadFromJSON(payload.canvasState);
+        canvas.requestRenderAll();
+        dispatch(pushHistory(JSON.stringify(canvas.toJSON(["id", "customName", "customType"]))));
+      } else {
+        console.error("[AI Action] Cleanup failed:", payload.error);
+      }
+    };
+    
+    socket.on('cleanup_response', handleCleanupResponse);
+    return () => socket.off('cleanup_response', handleCleanupResponse);
+  }, [canvas, dispatch]);
 
   // Close export dropdown on outside click
   useEffect(() => {
