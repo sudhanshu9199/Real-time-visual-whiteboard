@@ -13,6 +13,7 @@ import {
   Network,
   X,
 } from "lucide-react";
+import DraggableToggle from "../DraggableToggle";
 import { useSelector, useDispatch } from "react-redux";
 import {
   setBoardName,
@@ -190,11 +191,15 @@ const TopNav = () => {
   const [showExport, setShowExport] = useState(false);
   const [showShare, setShowShare] = useState(false);
 
-  const [aiCleanupActive, setAiCleanupActive] = useState(false);
   const [archAssistActive, setArchAssistActive] = useState(false);
 
   const nameInputRef = useRef(null);
   const exportBtnRef = useRef(null);
+  
+  const structureWhiteboard = () => {
+    console.log("[AI Action]: Executing structure_whiteboard() algorithm...");
+    // Future AI cleanup logic can be tied in here!
+  };
 
   useEffect(() => {
     if (isEditingName) nameInputRef.current?.select();
@@ -299,16 +304,10 @@ const TopNav = () => {
         </div>
 
         {/* ── Center: AI Floating Toggles ── */}
-        <div className={style.navGroup}>
+        <div className={style.navGroup} style={{ gap: '16px' }}>
+          <DraggableToggle onTrigger={structureWhiteboard} />
+          
           <div className={style.aiPill}>
-            <button
-              className={`${style.aiBtn} ${aiCleanupActive ? style.aiActive : ""}`}
-              onClick={() => setAiCleanupActive((p) => !p)}
-            >
-              <Wand2 size={13} /> <span>Mess Cleanup</span>
-              {aiCleanupActive && <span className={style.aiBadge} />}
-            </button>
-            <span className={style.pillDivider} />
             <button
               className={`${style.aiBtn} ${archAssistActive ? style.aiActive : ""}`}
               onClick={() => setArchAssistActive((p) => !p)}
