@@ -217,6 +217,96 @@ export const useToolManager = (canvas, syncLayers, saveHistory) => {
         };
         bindEvents();
         break;
+
+      case "sticky":
+        canvas.defaultCursor = "crosshair";
+        mdHandler = (opt) => {
+          if (opt.target || opt.e.altKey) return;
+          const ptr = canvas.getScenePoint(opt.e);
+          
+          const SIZE = 150;
+          const rect = new fabric.Rect({
+            width: SIZE,
+            height: SIZE,
+            fill: penColor,
+            rx: 8,
+            ry: 8,
+            originX: "center",
+            originY: "center",
+            shadow: new fabric.Shadow({
+              color: 'rgba(0,0,0,0.2)',
+              blur: 10,
+              offsetX: 2,
+              offsetY: 4
+            })
+          });
+
+          const text = new fabric.Textbox("Type here", {
+            width: SIZE - 20,
+            fontSize: 18,
+            fontFamily: '"DM Sans", sans-serif',
+            fill: "#ffffff",
+            textAlign: "center",
+            originX: "center",
+            originY: "center",
+            splitByGrapheme: true
+          });
+
+          const group = new fabric.Group([rect, text], {
+            left: ptr.x - SIZE / 2,
+            top: ptr.y - SIZE / 2,
+            id: uid("sticky"),
+            customName: "Sticky Note"
+          });
+
+          canvas.add(group);
+          canvas.setActiveObject(group);
+          syncLayers(canvas);
+          saveHistory(canvas);
+
+          // Handle double-click to edit
+          group.on("mousedblclick", () => {
+            // Hide inner text
+            text.visible = false;
+            canvas.requestRenderAll();
+
+            // Create standalone editable textbox
+            const groupMatrix = group.calcTransformMatrix();
+            const textMatrix = text.calcTransformMatrix();
+            const absoluteMatrix = fabric.util.multiplyTransformMatrices(groupMatrix, textMatrix);
+            const opt = fabric.util.qrDecompose(absoluteMatrix);
+
+            const editableText = new fabric.Textbox(text.text, {
+              left: opt.translateX - (text.width * opt.scaleX) / 2,
+              top: opt.translateY - (text.height * opt.scaleY) / 2,
+              width: text.width,
+              fontSize: text.fontSize * opt.scaleY,
+              fontFamily: text.fontFamily,
+              fill: text.fill,
+              textAlign: text.textAlign,
+              scaleX: 1,
+              scaleY: 1,
+              splitByGrapheme: true,
+              backgroundColor: "transparent",
+            });
+
+            canvas.add(editableText);
+            canvas.setActiveObject(editableText);
+            editableText.enterEditing();
+            editableText.selectAll();
+
+            editableText.on("editing:exited", () => {
+              text.set({ text: editableText.text });
+              text.visible = true;
+              canvas.remove(editableText);
+              canvas.setActiveObject(group);
+              canvas.requestRenderAll();
+              saveHistory(canvas);
+            });
+          });
+        };
+        bindEvents();
+        break;
     }
 
     // Cleanup listeners on tool change

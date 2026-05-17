@@ -107,8 +107,10 @@ export const undo = () => async (dispatch, getState) => {
   if (!canvas || historyIndex <= 0) return;
   const newIndex = historyIndex - 1;
   dispatch(setIsReplaying(true));
+  canvas.isReplaying = true;
   await canvas.loadFromJSON(history[newIndex]);
   canvas.renderAll();
+  canvas.isReplaying = false;
   dispatch(setHistoryIndex(newIndex));
   dispatch(setIsReplaying(false));
 };
@@ -118,8 +120,10 @@ export const redo = () => async (dispatch, getState) => {
   if (!canvas || historyIndex >= history.length - 1) return;
   const newIndex = historyIndex + 1;
   dispatch(setIsReplaying(true));
+  canvas.isReplaying = true;
   await canvas.loadFromJSON(history[newIndex]);
   canvas.renderAll();
+  canvas.isReplaying = false;
   dispatch(setHistoryIndex(newIndex));
   dispatch(setIsReplaying(false));
 };

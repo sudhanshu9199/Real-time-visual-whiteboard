@@ -46,7 +46,7 @@ const Canvas = () => {
   // ─────────────────────────────────────────────
   const saveHistory = useCallback(
     (canvas) => {
-      if (!canvas) return;
+      if (!canvas || canvas.isReplaying) return;
 
       if (!store.getState().whiteboard.isReplaying) {
         dispatch(

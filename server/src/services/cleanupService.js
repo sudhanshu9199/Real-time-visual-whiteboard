@@ -1,67 +1,145 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
+import dagre from "dagre";
 dotenv.config();
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "DUMMY");
 
 // ─── Spatial Cleanup ─────────────────────────────────────────────────────────
 const performSpatialCleanup = (objects, hasSemanticProcessed) => {
-  const SPACING_X = 150;
-  const SPACING_Y = 150;
-  const START_X = 100;
-  let START_Y = 100;
-  
-  // Find the lowest point of semantic text so we place shapes below them
+  const nodes = [];
+  const lines = [];
+
+  objects.forEach(obj => {
+    if (obj.id?.startsWith('theme-')) return;
+    
+    // Sort into lines/arrows and shapes
+    if (obj.type === 'line' || obj.type === 'arrow' || (obj.type === 'group' && obj.customName === 'arrow')) {
+      lines.push(obj);
+    } else if (
+      obj.type === 'rect' || obj.type === 'circle' || obj.type === 'triangle' || obj.type === 'polygon' || obj.type === 'group'
+    ) {
+      nodes.push(obj);
+    }
+  });
+
+  if (nodes.length === 0) return objects;
+
+  const g = new dagre.graphlib.Graph();
+  g.setGraph({ rankdir: 'TB', nodesep: 150, ranksep: 150 });
+  g.setDefaultEdgeLabel(() => ({}));
+
+  nodes.forEach(node => {
+    const w = (node.width || 100) * (node.scaleX || 1);
+    const h = (node.height || 100) * (node.scaleY || 1);
+    g.setNode(node.id, { width: w, height: h, obj: node });
+  });
+
+  const getDistance = (x1, y1, x2, y2) => Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+
+  const getCenter = (node) => {
+     let x = node.left || 0;
+     let y = node.top || 0;
+     if (node.originX !== 'center') x += ((node.width || 0) * (node.scaleX || 1)) / 2;
+     if (node.originY !== 'center') y += ((node.height || 0) * (node.scaleY || 1)) / 2;
+     return { x, y };
+  };
+
+  const edgeMappings = [];
+
+  lines.forEach(line => {
+    let x1 = line.x1 !== undefined ? line.x1 : line.left;
+    let y1 = line.y1 !== undefined ? line.y1 : line.top;
+    let x2 = line.x2 !== undefined ? line.x2 : line.left + (line.width || 0);
+    let y2 = line.y2 !== undefined ? line.y2 : line.top + (line.height || 0);
+
+    if (line.type === 'group' && line.customName === 'arrow') {
+        x1 = line.left;
+        y1 = line.top;
+        x2 = line.left + line.width;
+        y2 = line.top + line.height;
+    }
+
+    let closestFrom = null; let minFromDist = Infinity;
+    let closestTo = null;   let minToDist = Infinity;
+
+    nodes.forEach(node => {
+      const c = getCenter(node);
+      const distFrom = getDistance(x1, y1, c.x, c.y);
+      const distTo = getDistance(x2, y2, c.x, c.y);
+
+      if (distFrom < minFromDist) { minFromDist = distFrom; closestFrom = node; }
+      if (distTo < minToDist) { minToDist = distTo; closestTo = node; }
+    });
+
+    // Proximity binding (if endpoints are < 400px from shape centers)
+    if (closestFrom && closestTo && closestFrom !== closestTo) {
+      if (minFromDist < 400 && minToDist < 400) {
+         g.setEdge(closestFrom.id, closestTo.id);
+         edgeMappings.push({ line, fromNode: closestFrom, toNode: closestTo });
+      }
+    }
+  });
+
+  dagre.layout(g);
+
+  const START_X = 150;
+  let START_Y = 150;
+
   if (hasSemanticProcessed) {
     let maxY = 100;
     objects.forEach(obj => {
       if (obj.top > maxY) maxY = obj.top;
     });
-    START_Y = maxY + 150;
+    START_Y = maxY + 200;
   }
 
-  // If semantic AI ran, we only organize shapes (non-texts). 
-  // If AI didn't run, we organize EVERYTHING.
-  const objectsToOrganize = hasSemanticProcessed 
-    ? objects.filter(o => o.type !== 'i-text' && o.type !== 'textbox' && !o.id?.startsWith('theme-'))
-    : objects.filter(o => !o.id?.startsWith('theme-'));
-
-  // Sort objects loosely by their original Y then X (quantized bands)
-  objectsToOrganize.sort((a, b) => {
-    const bandA = Math.round((a.top || 0) / 100);
-    const bandB = Math.round((b.top || 0) / 100);
-    if (bandA !== bandB) return bandA - bandB;
-    return (a.left || 0) - (b.left || 0);
+  let minDagreX = Infinity, minDagreY = Infinity;
+  g.nodes().forEach(v => {
+     const n = g.node(v);
+     if (n.x < minDagreX) minDagreX = n.x;
+     if (n.y < minDagreY) minDagreY = n.y;
   });
 
-  const COLUMNS = 5;
-  let col = 0;
-  let row = 0;
+  g.nodes().forEach(v => {
+    const n = g.node(v);
+    const nodeObj = n.obj;
+    if (!nodeObj) return;
 
-  objectsToOrganize.forEach((obj) => {
-    // Snap to neat grid
-    obj.left = START_X + (col * SPACING_X);
-    obj.top = START_Y + (row * SPACING_Y);
-    
-    // Fix chaotic rotations!
-    if (obj.angle !== undefined) {
-      obj.angle = 0;
-    }
-    
-    // For messy chaotic lines, straighten them horizontally
-    if (obj.type === 'line') {
-      const width = Math.abs((obj.x2 || 0) - (obj.x1 || 0)) || 100;
-      obj.x1 = obj.left;
-      obj.y1 = obj.top;
-      obj.x2 = obj.left + width;
-      obj.y2 = obj.top;
-    }
+    if (nodeObj.angle !== undefined) nodeObj.angle = 0;
 
-    col++;
-    if (col >= COLUMNS) {
-      col = 0;
-      row++;
-    }
+    let newLeft = START_X + (n.x - minDagreX);
+    let newTop = START_Y + (n.y - minDagreY);
+
+    if (nodeObj.originX !== 'center') newLeft -= n.width / 2;
+    if (nodeObj.originY !== 'center') newTop -= n.height / 2;
+
+    nodeObj.left = newLeft;
+    nodeObj.top = newTop;
+  });
+
+  edgeMappings.forEach(({ line, fromNode, toNode }) => {
+     const c1 = getCenter(fromNode);
+     const c2 = getCenter(toNode);
+
+     if (line.type === 'line') {
+       line.x1 = c1.x; line.y1 = c1.y;
+       line.x2 = c2.x; line.y2 = c2.y;
+       line.left = Math.min(c1.x, c2.x);
+       line.top = Math.min(c1.y, c2.y);
+       line.width = Math.abs(c2.x - c1.x);
+       line.height = Math.abs(c2.y - c1.y);
+     } else if (line.type === 'group' && line.customName === 'arrow') {
+       const angle = Math.atan2(c2.y - c1.y, c2.x - c1.x) * 180 / Math.PI;
+       const length = getDistance(c1.x, c1.y, c2.x, c2.y);
+       
+       line.left = c1.x;
+       line.top = c1.y;
+       line.originX = 'left';
+       line.originY = 'center';
+       line.angle = angle;
+       line.scaleX = length / (line.width || 1);
+     }
   });
 
   return objects;
